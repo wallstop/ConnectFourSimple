@@ -1,0 +1,8 @@
+
+# Auto-generated class files
+bin/*
+
+# Eclipse files
+.settings/*
+.project
+.classpath
