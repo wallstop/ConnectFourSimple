@@ -20,6 +20,7 @@ public enum Player
     @Override
     public String toString()
     {
-        return String.format("%d", ordinal());
+        // Players should be 1-indexed, as humans tend to count from 1 instead of 0
+        return String.format("%d", ordinal() + 1);
     }
 }

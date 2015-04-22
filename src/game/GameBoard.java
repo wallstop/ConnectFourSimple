@@ -3,24 +3,29 @@ package game;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import utils.Validate;
 
-public class GameBoard
+public final class GameBoard
 {
     private static final short MOVES_TO_WIN = 4;
     
     private final List<Move>[] board_;
     private final int maxHeight_;
     
+    private final List<Move> moveHistory_;
+    
     @SuppressWarnings("unchecked")
     public GameBoard(final int width, final int height)
     {
-        Validate.inRange(width, 0, MOVES_TO_WIN);
-        Validate.inRange(height, 0, MOVES_TO_WIN);
+        Validate.inRange(MOVES_TO_WIN, 0, width);
+        Validate.inRange(MOVES_TO_WIN, 0, height);
 
         board_ = new List[width];
         maxHeight_ = height;
+        moveHistory_ = new ArrayList<Move>(width * height);
         initializeBoard();
     }
     
@@ -32,6 +37,7 @@ public class GameBoard
         final int width = copy.board_.length;
         board_ = new List[width];
         maxHeight_ = copy.maxHeight_;
+        moveHistory_ = new ArrayList<Move>(copy.moveHistory_);
 
         for (int i = 0; i < width; ++i)
         {
@@ -49,6 +55,7 @@ public class GameBoard
     {
         final int column = move.getColumn();
         board_[column].add(move);
+        moveHistory_.add(move);
     }
     
     public boolean checkedAddMove(final Move move)
@@ -146,6 +153,62 @@ public class GameBoard
         return internalPlayerAt(position);
     }
     
+    public int getHeight()
+    {
+        return maxHeight_;
+    }
+    
+    public int getWidth()
+    {
+        return board_.length;
+    }
+    
+    public Player[][] getBoardRepresentation()
+    {
+        final Player[][] representation = new Player[board_.length][maxHeight_];
+
+        applyFunctionToBoard((columnIndex, rowIndex) ->
+        {
+            final List<Move> column = board_[columnIndex];
+            Player player = null;
+            if (column.size() > rowIndex)
+            {
+                final Move move = column.get(rowIndex);
+                player = move.getPlayer();
+            }
+            representation[columnIndex][maxHeight_ - 1 - rowIndex] = player;
+        }, column ->
+        {
+        });
+
+        return representation;
+    }
+
+    public List<Move> availableMovesFor(final Player player)
+    {
+        final List<Move> availableMoves = new ArrayList<Move>(board_.length);
+        for (int i = 0; i < board_.length; ++i)
+        {
+            if (board_[i].size() < maxHeight_)
+            {
+                final Move availableMove = new Move(i, player);
+                availableMoves.add(availableMove);
+            }
+        }
+        return availableMoves;
+    }
+    
+    public boolean boardFull()
+    {
+        return availableMovesFor(null).isEmpty();
+    }
+    
+    // Return by copy so we don't mutate state
+    public List<Move> getMoveHistory()
+    {
+        return new ArrayList<Move>(moveHistory_);
+    }
+
     @Override
     public int hashCode()
     {
@@ -168,26 +231,41 @@ public class GameBoard
         return Arrays.deepEquals(board_, gameBoard.board_);
     }
     
+    private void applyFunctionToBoard(
+            final BiConsumer<Integer, Integer> middleOfRow,
+            final Consumer<Integer> endOfRow)
+    {
+        for (int i = (maxHeight_ - 1); i >= 0; --i)
+        {
+            for (int j = 0; j < board_.length; ++j)
+            {
+                middleOfRow.accept(j, i);
+            }
+            endOfRow.accept(i);
+        }
+    }
+    
     @Override
     public String toString()
     {
         final StringBuilder boardBuilder = new StringBuilder();
-        for (int i = maxHeight_; i >= 0; --i)
+        applyFunctionToBoard((columnIndex, rowIndex) ->
         {
-            for (final List<Move> column : board_)
+            final List<Move> column = board_[columnIndex];
+            if (column.size() <= rowIndex)
             {
-                if (column.size() <= i)
-                {
-                    boardBuilder.append("  ");
-                    continue;
-                }
-
+                boardBuilder.append("  ");
+            } else
+            {
                 boardBuilder.append(" ");
-                final Move move = column.get(i);
+                final Move move = column.get(rowIndex);
                 boardBuilder.append(move.toString());
             }
+        }, column ->
+        {
             boardBuilder.append("\n");
-        }
+        });
+
         final String boardRepresentation = boardBuilder.toString();
         return boardRepresentation;
     }

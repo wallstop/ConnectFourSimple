@@ -1,6 +1,6 @@
 package game;
 
-public class Vector2
+public final class Vector2
 {
     private final int x_;
     private final int y_;

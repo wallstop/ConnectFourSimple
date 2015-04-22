@@ -2,6 +2,20 @@ package utils;
 
 public final class Validate
 {
+    
+    public static void isTrue(final boolean assertion)
+    {
+        isTrue(assertion, "Validated assertion was false");
+    }
+    
+    public static void isTrue(final boolean assertion, final String message)
+    {
+        if(assertion == false)
+        {
+            throw new IllegalArgumentException(message);
+        }
+    }
+    
     public static void notNull(final Object argument)
     {
         notNull(argument, "Validated oject was null");

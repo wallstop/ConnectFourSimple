@@ -4,7 +4,7 @@ import java.util.Objects;
 
 import utils.Validate;
 
-public class Move
+public final class Move
 {
     private final int column_;
     private final Player player_;
