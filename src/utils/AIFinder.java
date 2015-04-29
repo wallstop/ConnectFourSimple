@@ -32,8 +32,7 @@ public final class AIFinder
         Validate.isTrue(currentDirectory.isDirectory(),
                 String.format("%s is not a directory!", currentDirectory));
 
-        final Collection<File> filesInDirectory = Arrays
-                .asList(currentDirectory.listFiles());
+        final File [] filesInDirectory = currentDirectory.listFiles();
         final Collection<File> filesInCurrentDirectory = new ArrayList<File>();
         for (final File file : filesInDirectory)
         {
