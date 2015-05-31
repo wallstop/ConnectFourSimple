@@ -1,6 +1,5 @@
 package utils;
 
-
 /**
  * Poor-man's Apache Validation.
  * 
@@ -20,6 +19,7 @@ public final class Validate
 
     /**
      * Checks to see if the provided assertion is true.
+     * 
      * @param assertion
      *            Checks the assertion for truthiness
      * @throws IllegalArgumentException
@@ -29,7 +29,7 @@ public final class Validate
     {
         isTrue(assertion, "Validated assertion was false");
     }
-    
+
     /**
      * Checks to see if the provided assertion is true.
      * 
@@ -70,10 +70,10 @@ public final class Validate
     }
 
     /**
-     * Checks to see if value is within the open interval [min, max] 
+     * Checks to see if value is within the open interval [min, max]
      * 
-     * Note: This method
-     * should auto-box & unbox pretty much any valid numeric argument
+     * Note: This method should auto-box & unbox pretty much any valid numeric
+     * argument
      * 
      * @param value
      *            Non-null value to check
@@ -81,7 +81,7 @@ public final class Validate
      *            Non-null minimum of range
      * @param max
      *            Non-null maximum of range
-     *            
+     * 
      * @throws IllegalArgumentException
      *             if value is less than min or larger than max.
      */

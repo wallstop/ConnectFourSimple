@@ -2,9 +2,7 @@ package games.connectfour;
 
 import game.Direction;
 import game.GameBoard;
-import game.Move;
 import game.Player;
-import game.Space;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,14 +17,23 @@ import utils.Vector2;
  * ConnectFour for everyone!
  *
  */
-public final class ConnectFourGameBoard extends GameBoard<ConnectFour, ConnectFourMove, ConnectFourSpace>
+public final class ConnectFourGameBoard extends
+        GameBoard<ConnectFour, ConnectFourMove, ConnectFourSpace>
 {
     private static final short MOVES_TO_WIN = 4;
-    
+
     private final List<ConnectFourMove>[] board_;
-    
+
     private final List<ConnectFourMove> moveHistory_;
-    
+
+    /**
+     * Creates a new ConnectFourGameBoard with the provided width & height
+     * 
+     * @param width
+     *            Width of board
+     * @param height
+     *            Height of board
+     */
     @SuppressWarnings("unchecked")
     public ConnectFourGameBoard(final int width, final int height)
     {
@@ -39,46 +46,49 @@ public final class ConnectFourGameBoard extends GameBoard<ConnectFour, ConnectFo
         initializeBoard();
     }
 
+    /**
+     * Creates a copy of the provided board. Modifying the state of either board
+     * will have no impact on the other.
+     * 
+     * @param copy
+     *            Board to copy
+     */
     @SuppressWarnings("unchecked")
     public ConnectFourGameBoard(final ConnectFourGameBoard copy)
     {
         super(copy);
         board_ = new List[width_];
         moveHistory_ = new ArrayList<ConnectFourMove>(copy.moveHistory_);
-        for (int i = 0; i < width_; ++i)
+        for(int i = 0; i < width_; ++i)
         {
             board_[i] = new ArrayList<ConnectFourMove>(copy.board_[i]);
         }
     }
-    
-    /**
-     * @param move
-     */
+
     @Override
     public void addMove(final ConnectFourMove move)
     {
         validateMove(move);
         internalAddMove(move);
     }
-    
+
+    // Adds the move, move is assumed valid
     private void internalAddMove(final ConnectFourMove move)
     {
         final int column = move.getColumn();
         board_[column].add(move);
         moveHistory_.add(move);
     }
-    
+
+    @Override
     public boolean checkedAddMove(final ConnectFourMove move)
     {
         final boolean won = checkIfWinningMove(move);
         addMove(move);
         return won;
     }
-    
-    /**
-     * @param move
-     * @return
-     */
+
+    @Override
     public boolean checkIfWinningMove(final ConnectFourMove move)
     {
         final int x = move.getColumn();
@@ -86,63 +96,74 @@ public final class ConnectFourGameBoard extends GameBoard<ConnectFour, ConnectFo
         final Vector2 movePosition = new Vector2(x, y);
         final Player player = move.getPlayer();
         boolean isWinningMove = false;
-        for (final Direction direction : Direction.uniqueLineDirections())
+        for(final Direction direction : Direction.uniqueLineDirections())
         {
-            isWinningMove = isWinningMove
-                    || internalCheckWinnerOnLine(movePosition, direction, player);
+            // Winner if any line from the move's point have length
+            isWinningMove |= internalCheckWinnerOnLine(movePosition, direction, player);
         }
 
         return isWinningMove;
     }
-    
+
+    /*
+     * Walk in both both directions away from the starting position to determine
+     * the the length of a line
+     */
     private boolean internalCheckWinnerOnLine(final Vector2 startingPosition,
             final Direction direction, final Player player)
     {
-        final int consecutiveMovesTowards = consecutiveMovesByPlayerInDirection(
-                startingPosition, direction, player, 0);
-        final int consecutiveMovesAway = consecutiveMovesByPlayerInDirection(
-                startingPosition, direction.opposite(), player, 0);
+        final int consecutiveMovesTowards = consecutiveMovesByPlayerInDirection(startingPosition,
+                direction, player, 0);
+        final int consecutiveMovesAway = consecutiveMovesByPlayerInDirection(startingPosition,
+                direction.opposite(), player, 0);
         return (consecutiveMovesAway + consecutiveMovesTowards + 1) >= MOVES_TO_WIN;
     }
-    
-    private int consecutiveMovesByPlayerInDirection(
-            final Vector2 currentPosition, final Direction direction,
-            final Player player, final int currentMoveCount)
+
+    /**
+     * Returns the number
+     */
+    private int consecutiveMovesByPlayerInDirection(final Vector2 currentPosition,
+            final Direction direction, final Player player, final int currentMoveCount)
     {
-        if (isWithinBounds(currentPosition)
-                && internalPlayerAt(currentPosition) == player)
+        if(isWithinBounds(currentPosition) && internalPlayerAt(currentPosition) == player)
         {
-            return consecutiveMovesByPlayerInDirection(
-                    currentPosition.add(direction.unitVector()), direction,
-                    player, currentMoveCount + 1);
+            return consecutiveMovesByPlayerInDirection(currentPosition.add(direction.unitVector()),
+                    direction, player, currentMoveCount + 1);
         }
         return currentMoveCount;
     }
-    
+
+    // Returns true if the Vector2 is in the bounds of the board
     private boolean isWithinBounds(final Vector2 position)
     {
         final int x = position.getX();
         final int y = position.getY();
         return x >= 0 && x < board_.length && y >= 0 && lengthOfColumn(x) > y;
     }
-    
+
+    /*
+     * Returns the player at the specified boardIndex, or null if no player is
+     * there.
+     */
     private Player internalPlayerAt(final Vector2 boardIndex)
     {
         final int x = boardIndex.getX();
         final int y = boardIndex.getY();
         final List<ConnectFourMove> column = board_[x];
-        if (column.size() >= y)
+        if(column.size() >= y)
         {
             return null;
         }
         return column.get(y).getPlayer();
     }
 
+    // How many moves are stacked in the given column
     private int lengthOfColumn(final int column)
     {
         return board_[column].size();
     }
-    
+
+    @Override
     protected void validateMove(final ConnectFourMove move)
     {
         Validate.notNull(move, "Provided move cannot be null");
@@ -151,28 +172,36 @@ public final class ConnectFourGameBoard extends GameBoard<ConnectFour, ConnectFo
 
     private void initializeBoard()
     {
-        for (int i = 0; i < board_.length; ++i)
+        for(int i = 0; i < board_.length; ++i)
         {
             board_[i] = new ArrayList<ConnectFourMove>(height_);
         }
     }
-    
-    /**
-     * @param position
-     * @return
-     */
-    public Player playerAt(final Vector2 position)
+
+    @Override
+    public Player playerAt(final ConnectFourSpace position)
     {
-        if (position == null || !isWithinBounds(position))
+        validateSpace(position);
+        final Vector2 coordinates = position.getPosition();
+        if(position == null || !isWithinBounds(coordinates))
         {
             return null;
         }
 
-        return internalPlayerAt(position);
+        return internalPlayerAt(coordinates);
     }
-    
+
     /**
-     * @return
+     * Returns a representation of the board as a 2D array of Players.
+     * 
+     * Board[column][Height]
+     * 
+     * Note: Null represents no player (playing there)
+     * 
+     * Note: Board is returned "visually", ie, the first move in a column will
+     * be at the maximum height for that column (instead of 0)
+     * 
+     * @return 2D Player array representing the board state.
      */
     public Player[][] getBoardRepresentation()
     {
@@ -182,29 +211,28 @@ public final class ConnectFourGameBoard extends GameBoard<ConnectFour, ConnectFo
         {
             final List<ConnectFourMove> column = board_[columnIndex];
             Player player = null;
-            if (column.size() > rowIndex)
+            if(column.size() > rowIndex)
             {
+                // Grab the player only if it exists
                 final ConnectFourMove move = column.get(rowIndex);
                 player = move.getPlayer();
             }
             representation[columnIndex][height_ - 1 - rowIndex] = player;
         }, column ->
         {
-        });
+            // No row-end function
+            });
 
         return representation;
     }
 
-    /**
-     * @param player
-     * @return
-     */
+    @Override
     public List<ConnectFourMove> availableMovesFor(final Player player)
     {
         final List<ConnectFourMove> availableMoves = new ArrayList<ConnectFourMove>(board_.length);
-        for (int i = 0; i < board_.length; ++i)
+        for(int i = 0; i < board_.length; ++i)
         {
-            if (board_[i].size() < height_)
+            if(board_[i].size() < height_)
             {
                 final ConnectFourMove availableMove = new ConnectFourMove(i, player);
                 availableMoves.add(availableMove);
@@ -212,18 +240,18 @@ public final class ConnectFourGameBoard extends GameBoard<ConnectFour, ConnectFo
         }
         return availableMoves;
     }
-    
+
     /**
-     * @return
+     * @return True if the board is full and no more moves can be made.
      */
     public boolean boardFull()
     {
         return availableMovesFor(null).isEmpty();
     }
-    
-    // Return by copy so we don't mutate state
+
+    @Override
     /**
-     * @return
+     * @return A copy of the move history (so we don't mutate state)
      */
     public List<ConnectFourMove> getMoveHistory()
     {
@@ -235,15 +263,15 @@ public final class ConnectFourGameBoard extends GameBoard<ConnectFour, ConnectFo
     {
         return Arrays.deepHashCode(board_);
     }
-    
+
     @Override
     public boolean equals(Object other)
     {
-        if (!(other instanceof ConnectFourGameBoard))
+        if(!(other instanceof ConnectFourGameBoard))
         {
             return false;
         }
-        if (other == this)
+        if(other == this)
         {
             return true;
         }
@@ -251,7 +279,7 @@ public final class ConnectFourGameBoard extends GameBoard<ConnectFour, ConnectFo
         final ConnectFourGameBoard gameBoard = (ConnectFourGameBoard) other;
         return Arrays.deepEquals(board_, gameBoard.board_);
     }
-    
+
     /**
      * This is kind of confusing, but this allows us to apply any BiConsumer to
      * the board (to be executed for every move in each row) and a Consumer to
@@ -265,20 +293,19 @@ public final class ConnectFourGameBoard extends GameBoard<ConnectFour, ConnectFo
      * @param endOfRow
      *            Function to apply for (row) at the end of each row
      */
-    private void applyFunctionToBoard(
-            final BiConsumer<Integer, Integer> middleOfRow,
+    private void applyFunctionToBoard(final BiConsumer<Integer, Integer> middleOfRow,
             final Consumer<Integer> endOfRow)
     {
-        for (int i = (height_ - 1); i >= 0; --i)
+        for(int i = (height_ - 1); i >= 0; --i)
         {
-            for (int j = 0; j < board_.length; ++j)
+            for(int j = 0; j < board_.length; ++j)
             {
                 middleOfRow.accept(j, i);
             }
             endOfRow.accept(i);
         }
     }
-    
+
     @Override
     public String toString()
     {
@@ -286,10 +313,11 @@ public final class ConnectFourGameBoard extends GameBoard<ConnectFour, ConnectFo
         applyFunctionToBoard((columnIndex, rowIndex) ->
         {
             final List<ConnectFourMove> column = board_[columnIndex];
-            if (column.size() <= rowIndex)
+            if(column.size() <= rowIndex)
             {
                 boardBuilder.append("  ");
-            } else
+            }
+            else
             {
                 boardBuilder.append(" ");
                 final ConnectFourMove move = column.get(rowIndex);
@@ -305,17 +333,12 @@ public final class ConnectFourGameBoard extends GameBoard<ConnectFour, ConnectFo
     }
 
     @Override
-    public Player playerAt(ConnectFourSpace space)
+    protected void validateSpace(final ConnectFourSpace space)
     {
-        // TODO Auto-generated method stub
-        return null;
+        Validate.notNull(space, "Space cannot be null");
+        /*
+         * We don't have to validate space.getPosition() here due to the
+         * invariant that Spaces cannot be initialized with null positions
+         */
     }
-
-    @Override
-    protected void validateSpace(ConnectFourSpace space)
-    {
-        // TODO Auto-generated method stub
-        
-    }
-
 }

@@ -5,16 +5,19 @@ import utils.Vector2;
 import game.Space;
 
 /**
- * @author wallstop
- *
+ * Immutable Space for ConnectFourGame. Represents a simple point on the
+ * gameboard, stored in a Vector2
  */
 public final class ConnectFourSpace extends Space<ConnectFour>
 {
     private final Vector2 position_;
 
     /**
-     * Creates a ConnectFourSpace out of a presumed-valid ConnectFourGameBoard position
-     * @param position position on the GameBoard that this space occurs
+     * Creates a ConnectFourSpace out of a presumed-valid ConnectFourGameBoard
+     * position
+     * 
+     * @param position
+     *            position on the GameBoard that this space occurs
      */
     public ConnectFourSpace(final Vector2 position)
     {
