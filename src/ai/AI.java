@@ -1,9 +1,9 @@
 package ai;
 
 import utils.Validate;
-import game.GameBoard;
-import game.Move;
 import game.Player;
+import games.connectfour.ConnectFourGameBoard;
+import games.connectfour.ConnectFourMove;
 
 public abstract class AI
 {
@@ -15,7 +15,7 @@ public abstract class AI
         player_ = player;
     }
 
-    public abstract Move determineMove(final GameBoard gameBoard);
+    public abstract ConnectFourMove determineMove(final ConnectFourGameBoard gameBoard);
 
     @Override
     public String toString()

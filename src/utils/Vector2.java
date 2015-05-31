@@ -1,4 +1,5 @@
-package game;
+package utils;
+
 
 public final class Vector2
 {
@@ -9,6 +10,13 @@ public final class Vector2
     {
         x_ = x;
         y_ = y;
+    }
+    
+    public Vector2(final Vector2 other)
+    {
+        Validate.notNull(other, "Cannot create a copy of a null Vector2");
+        x_ = other.x_;
+        y_ = other.y_;
     }
 
     public int getX()

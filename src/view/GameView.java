@@ -12,16 +12,16 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import utils.Validate;
-import game.GameBoard;
 import game.Player;
+import games.connectfour.ConnectFourGameBoard;
 
 public final class GameView
 {
-    private final GameBoard gameBoard_;
+    private final ConnectFourGameBoard gameBoard_;
     private final Map<Player, Color> playerColors_;
     private final JPanel boardRepresentation_;
 
-    public GameView(final GameBoard gameBoard)
+    public GameView(final ConnectFourGameBoard gameBoard)
     {
         Validate.notNull(gameBoard,
                 "Cannot create a view into a null gameboard");

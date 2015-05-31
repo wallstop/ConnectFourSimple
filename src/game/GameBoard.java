@@ -1,272 +1,187 @@
 package game;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 import utils.Validate;
 
-public final class GameBoard
+/**
+ *
+ * GameBoards are the abstract representation of whatever game is being played.
+ * At it's core, it maintains the state of the board, performs game-rule logic,
+ * and offers the users with a rich API of "stuff that can be done in the game".
+ * 
+ * Game runners will typically instantiate a single one of these and pass it
+ * between the players for the game (immutability/copies where required).
+ * 
+ * @param <T>
+ *            The Game being played
+ * @param <U>
+ *            The exact type of the Moves of the Game. These moves need to
+ *            extend the GameType
+ * @param <V>
+ *            The exact type of the Spaces of the Game. These spaces need to
+ *            extend the GameType.
+ */
+public abstract class GameBoard<T extends Game, U extends Move<T>, V extends Space<T>>
 {
-    private static final short MOVES_TO_WIN = 4;
-    
-    private final List<Move>[] board_;
-    private final int maxHeight_;
-    
-    private final List<Move> moveHistory_;
-    
-    @SuppressWarnings("unchecked")
-    public GameBoard(final int width, final int height)
-    {
-        Validate.inRange(MOVES_TO_WIN, 0, width);
-        Validate.inRange(MOVES_TO_WIN, 0, height);
+    /*
+     * TODO: Will all games have a width & height? Right now, yes, in the
+     * future... maybe?
+     */
+    protected final int width_;
+    protected final int height_;
 
-        board_ = new List[width];
-        maxHeight_ = height;
-        moveHistory_ = new ArrayList<Move>(width * height);
-        initializeBoard();
+    /**
+     * Creates a game board of the specified width & height
+     * 
+     * @param width
+     *            Width
+     * @param height
+     *            Height
+     * 
+     * @throws IllegalArgumentException
+     *             if either width or height are less than or equal to 0
+     */
+    public GameBoard(int width, int height)
+    {
+        Validate.isTrue(width > 0, "Cannot create a GameBoard with width <= 0");
+        Validate.isTrue(height > 0, "Cannot create a GameBoard with height <=0");
+        width_ = width;
+        height_ = height;
     }
     
-    @SuppressWarnings("unchecked")
-    public GameBoard(final GameBoard copy)
+    public GameBoard(final GameBoard<T, U, V> board)
     {
-        Validate.notNull(copy, "Provided GameBoard cannot be null");
-
-        final int width = copy.board_.length;
-        board_ = new List[width];
-        maxHeight_ = copy.maxHeight_;
-        moveHistory_ = new ArrayList<Move>(copy.moveHistory_);
-
-        for (int i = 0; i < width; ++i)
-        {
-            board_[i] = new ArrayList<Move>(copy.board_[i]);
-        }
-    }
-    
-    public void addMove(final Move move)
-    {
-        validateMove(move);
-        internalAddMove(move);
-    }
-    
-    private void internalAddMove(final Move move)
-    {
-        final int column = move.getColumn();
-        board_[column].add(move);
-        moveHistory_.add(move);
-    }
-    
-    public boolean checkedAddMove(final Move move)
-    {
-        final boolean won = checkIfWinningMove(move);
-        addMove(move);
-        return won;
-    }
-    
-    public boolean checkIfWinningMove(final Move move)
-    {
-        final int x = move.getColumn();
-        final int y = lengthOfColumn(x);
-        final Vector2 movePosition = new Vector2(x, y);
-        final Player player = move.getPlayer();
-        boolean isWinningMove = false;
-        for (final Direction direction : Direction.uniqueDirections())
-        {
-            isWinningMove = isWinningMove
-                    || internalCheckWinnerOnLine(movePosition, direction, player);
-        }
-
-        return isWinningMove;
-    }
-    
-    private boolean internalCheckWinnerOnLine(final Vector2 startingPosition,
-            final Direction direction, final Player player)
-    {
-        final int consecutiveMovesTowards = consecutiveMovesByPlayerInDirection(
-                startingPosition, direction, player, 0);
-        final int consecutiveMovesAway = consecutiveMovesByPlayerInDirection(
-                startingPosition, direction.opposite(), player, 0);
-        return (consecutiveMovesAway + consecutiveMovesTowards + 1) >= MOVES_TO_WIN;
-    }
-    
-    private int consecutiveMovesByPlayerInDirection(
-            final Vector2 currentPosition, final Direction direction,
-            final Player player, final int currentMoveCount)
-    {
-        if (isWithinBounds(currentPosition)
-                && internalPlayerAt(currentPosition) == player)
-        {
-            return consecutiveMovesByPlayerInDirection(
-                    currentPosition.add(direction.unitVector()), direction,
-                    player, currentMoveCount + 1);
-        }
-        return currentMoveCount;
-    }
-    
-    private boolean isWithinBounds(final Vector2 position)
-    {
-        final int x = position.getX();
-        final int y = position.getY();
-        return x >= 0 && x < board_.length && y >= 0 && lengthOfColumn(x) > y;
-    }
-    
-    private Player internalPlayerAt(final Vector2 boardIndex)
-    {
-        final int x = boardIndex.getX();
-        final int y = boardIndex.getY();
-        final List<Move> column = board_[x];
-        if (column.size() >= y)
-        {
-            return null;
-        }
-        return column.get(y).getPlayer();
+        Validate.notNull(board, "Cannot create a copy of a null board");
+        width_ = board.width_;
+        height_ = board.height_;
     }
 
-    private int lengthOfColumn(final int column)
-    {
-        return board_[column].size();
-    }
-    
-    private void validateMove(final Move move)
-    {
-        Validate.notNull(move, "Provided move cannot be null");
-        Validate.inRange(move.getColumn(), 0, board_.length);
-    }
+    /**
+     * Applies the provided move to the gameboard. This move is checked for
+     * Validity, where validity is defined as 
+     * -Move is not null 
+     * -Player who's turn it is is the owner of the Move 
+     * -The provided Move is among the selection of possible moves
+     * 
+     * If any of these conditions aren't met, this method should throw an
+     * IllegalArgumentException.
+     * 
+     * @param move
+     *            The move that is being made. Move must be valid.
+     */
+    public abstract void addMove(final U move);
 
-    private void initializeBoard()
-    {
-        for (int i = 0; i < board_.length; ++i)
-        {
-            board_[i] = new ArrayList<Move>(maxHeight_);
-        }
-    }
-    
-    public Player playerAt(final Vector2 position)
-    {
-        if (position == null || !isWithinBounds(position))
-        {
-            return null;
-        }
+    /**
+     * Similar to addMove, except that this method will return true if the move
+     * that was made was a winning move (ie, placed the game into a state such
+     * that no moves can be made by the other player & the player who made the
+     * move achieved "victory", however that is defined.")
+     * 
+     * This method both applies the move & checks for victory condition.
+     * 
+     * This method is provided as a convenience. Note that since this method has
+     * to perform a check to see if the move wins the game or not, this is a more
+     * computationally expensive option to addMove(...), and should only be used
+     * in places where the result is checked.
+     * 
+     * @param move
+     *            The move that is being made. Move must be valid
+     * 
+     * @return True if the move wins the game, false otherwise.
+     */
+    public abstract boolean checkedAddMove(final U move);
 
-        return internalPlayerAt(position);
-    }
-    
+    /**
+     * Determines whether or not the provided Move will result in the game being
+     * won or not.
+     * 
+     * Note: The move should be validated and throw an IllegalArgumentException
+     * if it is not a valid move
+     * 
+     * Note: This method should not apply the move to the board, only check to
+     * see if the Move would result in a winning game state.
+     * 
+     * @param move
+     *            The move that is being made. Move must be valid.
+     * @return True if the move wins the game, false otherwise.
+     */
+    public abstract boolean checkIfWinningMove(final U move);
+
+    /**
+     * Returns the player at the specified space. If there is no player at the
+     * space, this method should return null. This can be typically thought of
+     * as (Player who owns the move that resulted in a piece occupying space
+     * ____)
+     * 
+     * Note: This method should validate the space. A valid space is one that:
+     * -Is not null 
+     * -Is within the gameboard
+     * 
+     * @param space
+     *            The space to check for a player at.
+     * @return The player at the space, if any, null if no player.
+     */
+    public abstract Player playerAt(final V space);
+
+    /**
+     * Determines all of the available moves given the current state of the
+     * board for the provided Player.
+     * 
+     * If no moves exist, this should return an empty list.
+     * 
+     * Note: This method should throw an IllegalArgumentException if the player
+     * is null
+     * 
+     * @param player
+     *            Player to determine moves for
+     * @return List of available moves for the player
+     */
+    public abstract List<U> availableMovesFor(final Player player);
+
+    /**
+     * Returns an ordered list of all Moves that have been made for this
+     * GameBoard. Returns an empty list if no moves have been made.
+     * 
+     * @return Ordered List of all moves made from start to current state.
+     */
+    public abstract List<U> getMoveHistory();
+
+    /**
+     * This method should throw an IllegalArgumentException if the move is not
+     * valid
+     * 
+     * @param move
+     *            Move to check
+     * @throws IllegalArgumentException
+     *             if the move is invalid
+     */
+    protected abstract void validateMove(final U move);
+
+    /**
+     * This method should throw an IllegalArgumentException if the space is not
+     * valid
+     * 
+     * @param space
+     *            Space to check
+     * @throws IllegalArgumentException
+     *             if the space is invalid
+     */
+    protected abstract void validateSpace(final V space);
+
+    /**
+     * @return Board height
+     */
     public int getHeight()
     {
-        return maxHeight_;
+        return height_;
     }
-    
+
+    /**
+     * @return Board width
+     */
     public int getWidth()
     {
-        return board_.length;
-    }
-    
-    public Player[][] getBoardRepresentation()
-    {
-        final Player[][] representation = new Player[board_.length][maxHeight_];
-
-        applyFunctionToBoard((columnIndex, rowIndex) ->
-        {
-            final List<Move> column = board_[columnIndex];
-            Player player = null;
-            if (column.size() > rowIndex)
-            {
-                final Move move = column.get(rowIndex);
-                player = move.getPlayer();
-            }
-            representation[columnIndex][maxHeight_ - 1 - rowIndex] = player;
-        }, column ->
-        {
-        });
-
-        return representation;
-    }
-
-    public List<Move> availableMovesFor(final Player player)
-    {
-        final List<Move> availableMoves = new ArrayList<Move>(board_.length);
-        for (int i = 0; i < board_.length; ++i)
-        {
-            if (board_[i].size() < maxHeight_)
-            {
-                final Move availableMove = new Move(i, player);
-                availableMoves.add(availableMove);
-            }
-        }
-        return availableMoves;
-    }
-    
-    public boolean boardFull()
-    {
-        return availableMovesFor(null).isEmpty();
-    }
-    
-    // Return by copy so we don't mutate state
-    public List<Move> getMoveHistory()
-    {
-        return new ArrayList<Move>(moveHistory_);
-    }
-
-    @Override
-    public int hashCode()
-    {
-        return Arrays.deepHashCode(board_);
-    }
-    
-    @Override
-    public boolean equals(Object other)
-    {
-        if (!(other instanceof GameBoard))
-        {
-            return false;
-        }
-        if (other == this)
-        {
-            return true;
-        }
-
-        final GameBoard gameBoard = (GameBoard) other;
-        return Arrays.deepEquals(board_, gameBoard.board_);
-    }
-    
-    private void applyFunctionToBoard(
-            final BiConsumer<Integer, Integer> middleOfRow,
-            final Consumer<Integer> endOfRow)
-    {
-        for (int i = (maxHeight_ - 1); i >= 0; --i)
-        {
-            for (int j = 0; j < board_.length; ++j)
-            {
-                middleOfRow.accept(j, i);
-            }
-            endOfRow.accept(i);
-        }
-    }
-    
-    @Override
-    public String toString()
-    {
-        final StringBuilder boardBuilder = new StringBuilder();
-        applyFunctionToBoard((columnIndex, rowIndex) ->
-        {
-            final List<Move> column = board_[columnIndex];
-            if (column.size() <= rowIndex)
-            {
-                boardBuilder.append("  ");
-            } else
-            {
-                boardBuilder.append(" ");
-                final Move move = column.get(rowIndex);
-                boardBuilder.append(move.toString());
-            }
-        }, column ->
-        {
-            boardBuilder.append("\n");
-        });
-
-        final String boardRepresentation = boardBuilder.toString();
-        return boardRepresentation;
+        return width_;
     }
 }

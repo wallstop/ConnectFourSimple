@@ -4,28 +4,20 @@ import java.util.Objects;
 
 import utils.Validate;
 
-public final class Move
+public abstract class Move<T extends Game>
 {
-    private final int column_;
-    private final Player player_;
+    protected final Player player_;
 
-    public Move(final int column, final Player player)
+    public Move(final Player player)
     {
-        Validate.notNull(player, "Player cannot be null");
-        column_ = column;
+        Validate.notNull(player, "Cannot create a move without a valid player");
         player_ = player;
     }
-
-    public Move(final Move move)
+    
+    public Move(final Move<T> move)
     {
-        Validate.notNull(move, "Cannot create a move from a null move");
-        column_ = move.getColumn();
-        player_ = move.getPlayer();
-    }
-
-    public int getColumn()
-    {
-        return column_;
+        Validate.notNull(move, "Cannot copy a null move");
+        player_ = move.player_;
     }
 
     public Player getPlayer()
@@ -36,7 +28,7 @@ public final class Move
     @Override
     public int hashCode()
     {
-        return Objects.hash(column_, player_);
+        return Objects.hash(player_);
     }
 
     @Override
@@ -48,17 +40,18 @@ public final class Move
     @Override
     public boolean equals(Object other)
     {
-        if (!(other instanceof Move))
+        if(!(other instanceof Move))
         {
             return false;
         }
-        if (other == this)
+        if(other == this)
         {
             return true;
         }
 
-        final Move move = (Move) other;
-        return Objects.equals(column_, move.column_)
-                && Objects.equals(player_, move.player_);
+        @SuppressWarnings("unchecked")
+        final Move<T> move = (Move<T>) other;
+        return Objects.equals(player_, move.player_);
     }
+
 }

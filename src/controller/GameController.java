@@ -1,8 +1,8 @@
 package controller;
 
-import game.GameBoard;
-import game.Move;
 import game.Player;
+import games.connectfour.ConnectFourGameBoard;
+import games.connectfour.ConnectFourMove;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -15,13 +15,13 @@ public final class GameController
     public static void main(String args[])
     {
         // TODO: Move this to testing, just a small playground while I get re-acquainted with swing
-        final GameBoard gameBoard = new GameBoard(6, 7);
+        final ConnectFourGameBoard gameBoard = new ConnectFourGameBoard(6, 7);
 
         final GameView gameView = new GameView(gameBoard);
 
-        gameBoard.addMove(new Move(0, Player.PLAYER_1));
-        gameBoard.addMove(new Move(0, Player.PLAYER_1));
-        gameBoard.addMove(new Move(0, Player.PLAYER_2));
+        gameBoard.addMove(new ConnectFourMove(0, Player.PLAYER_1));
+        gameBoard.addMove(new ConnectFourMove(0, Player.PLAYER_1));
+        gameBoard.addMove(new ConnectFourMove(0, Player.PLAYER_2));
 
         final JPanel panel = gameView.getBoardRepresentation();
         gameView.refresh();
